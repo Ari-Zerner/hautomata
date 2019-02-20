@@ -20,7 +20,9 @@ library
   exposed-modules:     Automata.Automaton, Automata.FSA
   -- other-modules:
   other-extensions:    MultiParamTypeClasses, FunctionalDependencies, RecordWildCards
-  build-depends:       base ==4.*, containers ==0.*
+  build-depends:       base ==4.*,
+                       containers ==0.*,
+                       set-monad ==0.*
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -32,6 +34,7 @@ test-suite test-all
   main-is:             Test/Main.hs
   build-depends:       base ==4.*,
                        containers ==0.*,
+                       set-monad ==0.*,
                        HTF ==0.*,
                        QuickCheck ==2.*,
                        HUnit ==1.*

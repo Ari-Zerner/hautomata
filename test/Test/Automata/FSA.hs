@@ -39,21 +39,21 @@ prop_total :: Integer -> [Integer] -> [(Integer, [(Char, Integer)])] -> Bool
 prop_total start accept trans = partialDecide (dfa start accept trans) /= Undecided
 
 prop_acceptingStates :: Integer -> [Integer] -> Bool
-prop_acceptingStates start accept = Set.fromList (acceptingStates m) == Set.fromList accept
+prop_acceptingStates start accept = Set.fromList (acceptingStates $ liftDfa m) == Set.fromList accept
   where m = dfa start accept [] :: DFA'
 
 prop_transitions :: Integer -> [Integer] -> [(Integer, [(Char, Integer)])] -> Bool
 prop_transitions start accept trans = flatSet (deDup trans) == flatSet trans'
-  where trans'    = transitions $ dfa start accept (deDup trans)
+  where trans'    = transitions $ liftDfa $ dfa start accept (deDup trans)
         fstEq a b = fst a == fst b
         deDup     = map (fmap (nubBy fstEq)) . nubBy fstEq
         flatSet t = Set.fromList [(q1, s, q2) | (q1, sAndQ2s) <- t, (s, q2) <- sAndQ2s]
 
 propAccepts :: Bool -> Integer -> [Integer] -> [(Integer, [(Char, Integer)])] -> [Char] -> Property
 propAccepts expected start accept trans sigma =
-  forAll (listOf $ elements sigma) $ \input -> expected == (accepts (dfa start accept trans) input)
+  forAll (listOf $ elements sigma) $ \input -> expected == (accepts (liftDfa $ dfa start accept trans) input)
 
 prop_accepts_1 = propAccepts False 0 [] [] "ab"
-prop_accepts_2 = accepts (dfa 0 [0] []) ""
+prop_accepts_2 = accepts (liftDfa $ dfa 0 [0] []) ""
 prop_accepts_3 = propAccepts True 0 [0] [(0, [('a', 0)])] "a"
 -- TODO? More properties for `accepts`
