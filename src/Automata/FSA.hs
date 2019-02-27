@@ -39,7 +39,7 @@ dfa :: (Ord state, Ord symbol)
     -> [(state,  [(symbol, state)])] -- ^For each state, the list of transitions from that state
     -> state -- ^The initial state
     -> DFA state symbol
-dfa accepting transitions initial = DFA (Set.fromList accepting) transitionMap initial
+dfa accepting transitions = DFA (Set.fromList accepting) transitionMap
   where transitionMap = Map.fromList [ ((state, symbol), newState)
                                      | (state, stateTransitions) <- transitions
                                      , (symbol, newState) <- stateTransitions
@@ -52,10 +52,10 @@ currentState (DFA _ _ current) = current
 -- |Get the transitions of a DFA, grouped by source state.
 dfaTransitions :: (Ord state, Ord symbol) => DFA state symbol -> [(state,  [(symbol, state)])]
 dfaTransitions (DFA _ trans _) = Map.toList $ Map.toList <$> Map.foldrWithKey aux Map.empty trans
-  where aux (q1, s) q2 acc = Map.insertWith Map.union q1 (Map.singleton s q2) acc
+  where aux (q1, s) q2 = Map.insertWith Map.union q1 (Map.singleton s q2)
 
 instance (Ord state, Ord symbol) => Steppable symbol (DFA state symbol) where
-  step s (DFA accepting trans current) = (DFA accepting trans) <$> trans Map.!? (current, s)
+  step s (DFA accepting trans current) = DFA accepting trans <$> trans Map.!? (current, s)
 
 instance (Ord state) => PartialDecider (DFA state symbol) where
   partialDecide = Decided . decide
@@ -76,12 +76,12 @@ data NFA state symbol = NFA
 -- |See Data.Maybe.mapMaybe.
 setMapMaybe :: (Ord a, Ord b) => (a -> Maybe b) -> Set.Set a -> Set.Set b
 setMapMaybe f = foldr aux Set.empty
-  where aux x s = maybe s (flip Set.insert s) $ f x
+  where aux x s = maybe s (`Set.insert` s) $ f x
 
 -- |Find all states reachable from current by zero or more epsilon transitions.
 epsilonClosure :: Ord state => NFA state symbol -> NFA state symbol
 epsilonClosure (NFA accepting symTrans eTrans current) = NFA accepting symTrans eTrans $ bfs current current
-  where bfs seen frontier = let frontier' = (fold $ setMapMaybe (eTrans Map.!?) frontier) Set.\\ seen
+  where bfs seen frontier = let frontier' = fold (setMapMaybe (eTrans Map.!?) frontier) Set.\\ seen
                             in if Set.null frontier' then seen else bfs (seen <> frontier') frontier'
 
 -- |Create a new NFA.
@@ -107,7 +107,7 @@ currentStates (NFA _ _ _ current) = Set.toList current
 -- |Get the symbol and epsilon transitions of a NFA, grouped by source state.
 nfaTransitions :: (Ord state, Ord symbol) => NFA state symbol -> [(state,  ([(symbol, [state])], [state]))]
 nfaTransitions (NFA _ symTrans eTrans _) = map aux states
-  where states        = Set.toList $ (Set.map fst $ Map.keysSet symTrans) <> Map.keysSet eTrans
+  where states        = Set.toList $ Set.map fst (Map.keysSet symTrans) <> Map.keysSet eTrans
         aux state     = (state, (listSym state, listE state))
         listSym state = [ (symbol, Set.toList newStates)
                         | ((state', symbol), newStates) <- Map.toList symTrans

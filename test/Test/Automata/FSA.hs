@@ -53,7 +53,7 @@ prop_d_transitions start accept trans = m == m'
 
 propDAccepts :: [Symbol] -> ([Symbol] -> Bool) -> State -> [State] -> [(State, [(Symbol, State)])] -> Property
 propDAccepts sigma p start accept trans =
-  forAll (listOf $ elements sigma) $ \input -> (p input) == (accepts (liftDfa $ dfa accept trans start) input)
+  forAll (listOf $ elements sigma) $ \input -> p input == accepts (liftDfa $ dfa accept trans start) input
 
 prop_d_accepts_1 = propDAccepts "ab" (const False) 0 [] []
 prop_d_accepts_2 = accepts (liftDfa $ dfa [0] [] 0) ""
@@ -105,7 +105,7 @@ prop_n_transitions start accept trans = m == m'
 
 propNAccepts :: [Symbol] -> ([Symbol] -> Bool) -> State -> [State] -> [(State,  ([(Symbol, [State])], [State]))] -> Property
 propNAccepts sigma p start accept trans =
-  forAll (listOf $ elements sigma) $ \input -> (p input) == (accepts (liftNfa $ nfa accept trans start) input)
+  forAll (listOf $ elements sigma) $ \input -> p input == accepts (liftNfa $ nfa accept trans start) input
 
 prop_n_accepts_1 = propNAccepts "ab" (const False) 0 [] []
 prop_n_accepts_2 = propNAccepts "ab" ("baa" `isSuffixOf`) 0 [3] trans
