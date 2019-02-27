@@ -9,6 +9,10 @@ class Steppable input a | a -> input where
 data Decision = Reject | Accept
   deriving (Eq, Ord, Read, Show)
 
+-- |Accept if input is True, Reject if input is False.
+acceptIff :: Bool -> Decision
+acceptIff b = if b then Accept else Reject
+
 isAccept :: Decision -> Bool
 isAccept Reject = False
 isAccept Accept = True
