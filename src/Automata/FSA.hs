@@ -18,28 +18,11 @@ module Automata.FSA (
 ) where
 
 import Automata.Automaton
-import qualified Data.Set.Monad as Set
+import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 import Data.Maybe
 import Data.Foldable (fold)
 import Control.Monad
-
--- |The non-state data of a finite state automaton.
-data FSADef state symbol nextState =
-  FSADef
-    (Set.Set state) -- ^accepting states
-    (Map.Map (state, symbol) nextState) -- ^transitions
-  deriving (Show) -- TODO: remove in production
-
-fsaDef :: (Ord state, Ord symbol)
-       => [state] -- ^The accepting states
-       -> [(state,  [(symbol, nextState)])] -- ^For each state, the list of transitions from that state
-       -> FSADef state symbol nextState
-fsaDef accepting transitions = FSADef (Set.fromList accepting) transitionMap
-  where transitionMap = Map.fromList [ ((state, symbol), newState)
-                                     | (state, stateTransitions) <- transitions
-                                     , (symbol, newState) <- stateTransitions
-                                     ]
 
 --- DFA
 
@@ -124,7 +107,7 @@ currentStates (NFA _ _ _ current) = Set.toList current
 -- |Get the symbol and epsilon transitions of a NFA, grouped by source state.
 nfaTransitions :: (Ord state, Ord symbol) => NFA state symbol -> [(state,  ([(symbol, [state])], [state]))]
 nfaTransitions (NFA _ symTrans eTrans _) = map aux states
-  where states        = Set.toList $ (fst <$> (Set.fromList $ Map.keys symTrans)) <> (Set.fromList $ Map.keys eTrans)
+  where states        = Set.toList $ (Set.map fst $ Map.keysSet symTrans) <> Map.keysSet eTrans
         aux state     = (state, (listSym state, listE state))
         listSym state = [ (symbol, Set.toList newStates)
                         | ((state', symbol), newStates) <- Map.toList symTrans
@@ -137,16 +120,13 @@ instance (Ord state, Ord symbol) => Steppable symbol (NFA state symbol) where
     if Set.null newStates
       then mzero
       else return $ epsilonClosure $ NFA accepting symTrans eTrans newStates
-    where newStates = [ newState
-                      | state <- current
-                      , newState <- Map.findWithDefault Set.empty (state, s) symTrans
-                      ]
+    where newStates = fold [Map.findWithDefault Set.empty (state, s) symTrans | state <- Set.toList current]
 
 instance (Ord state) => PartialDecider (NFA state symbol) where
   partialDecide = Decided . decide
 
 instance (Ord state) => Decider (NFA state symbol) where
-  decide (NFA accepting _ _ current) = acceptIff $ not $ Set.null $ current `Set.intersection` accepting
+  decide (NFA accepting _ _ current) = acceptIff $ not $ current `Set.disjoint` accepting
 
 --- FSA
 
