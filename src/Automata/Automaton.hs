@@ -33,3 +33,7 @@ class PartialDecider a where
 
 class PartialDecider a => Decider a where
   decide :: a -> Decision
+
+class Accepter input a | a -> input where
+  -- ^Determine whether an automaton accepts a list of inputs.
+  accepts :: a -> [input] -> Bool

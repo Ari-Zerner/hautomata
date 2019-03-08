@@ -163,6 +163,5 @@ instance (Ord state) => Decider (FSA state symbol) where
   decide (D m) = decide m
   decide (N m) = decide m
 
--- |Determine whether a FSA accepts a list of symbols.
-accepts :: (Ord state, Ord symbol) => FSA state symbol -> [symbol] -> Bool
-accepts m input = maybe False (isAccept . decide) $ foldM (flip step) m input
+instance (Ord state, Ord symbol) => Accepter symbol (FSA state symbol) where
+  accepts m input = maybe False (isAccept . decide) $ foldM (flip step) m input
