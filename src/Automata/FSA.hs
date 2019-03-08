@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, MonadComprehensions #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
 module Automata.FSA (
   DFA,
