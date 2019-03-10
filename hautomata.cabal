@@ -17,9 +17,12 @@ extra-source-files:  ChangeLog.md, README.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Automata.Automaton, Automata.FSA
+  exposed-modules:     Automata.Automaton, Automata.FSA, Automata.PDA
   -- other-modules:
-  other-extensions:    MultiParamTypeClasses, FunctionalDependencies, RecordWildCards
+  other-extensions:    MultiParamTypeClasses,
+                       FunctionalDependencies,
+                       RecordWildCards,
+                       DuplicateRecordFields
   build-depends:       base ==4.*,
                        containers ==0.*
   hs-source-dirs:      src
