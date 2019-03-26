@@ -32,7 +32,9 @@ test-suite test-all
   type:                exitcode-stdio-1.0
   other-modules:       Automata.Automaton,
                        Automata.FSA,
-                       Test.Automata.FSA
+                       Test.Automata.FSA,
+                       Automata.PDA,
+                       Test.Automata.PDA
   main-is:             Test/Main.hs
   build-depends:       base ==4.*,
                        containers ==0.*,

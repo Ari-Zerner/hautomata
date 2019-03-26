@@ -27,7 +27,7 @@ import Control.Monad
 -- |The condition for a PDA to accept a string.
 data AcceptCondition state = EmptyStack
                            | FinalState (Set.Set state)
-  deriving (Eq)
+  deriving (Eq, Show)
 
 meetsCondition :: Ord state => AcceptCondition state -> (state, [stackSymbol]) -> Bool
 meetsCondition EmptyStack          = null . snd
@@ -68,9 +68,20 @@ currentStack :: DPDA state stackSymbol symbol -> [stackSymbol]
 currentStack = stack
 
 -- |Get the transition table of a DPDA.
-dpdaTransitions :: DPDA state stackSymbol symbol
+dpdaTransitions :: (Ord state, Ord stackSymbol, Ord symbol)
+                => DPDA state stackSymbol symbol
                 -> [(state, [(stackSymbol, [(symbol, (state, [stackSymbol]))])])]
-dpdaTransitions = undefined
+dpdaTransitions DPDA{..} = listify $ buildHierarchy $ Map.toList transitions
+  where buildHierarchy = foldr aux Map.empty
+          where aux ((q, g, s), res) m =
+                  flip (Map.insert q) m $
+                    case m Map.!? q of
+                      Nothing -> Map.singleton g $ Map.singleton s res
+                      Just mq -> flip (Map.insert g) mq $
+                        case mq Map.!? g of
+                          Nothing  -> Map.singleton s res
+                          Just mqg -> Map.insert s res mqg
+        listify m = Map.toList $ Map.toList <$> fmap Map.toList <$> m
 
 instance (Ord state, Ord stackSymbol, Ord symbol)
   => Steppable symbol (DPDA state stackSymbol symbol) where

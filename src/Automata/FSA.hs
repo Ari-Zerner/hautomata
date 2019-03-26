@@ -13,8 +13,7 @@ module Automata.FSA (
   liftDfa,
   liftNfa,
   dfaOrNfa,
-  acceptingStates,
-  accepts
+  acceptingStates
 ) where
 
 import Automata.Automaton
@@ -142,6 +141,7 @@ liftDfa = D
 liftNfa :: NFA state symbol -> FSA state symbol
 liftNfa = N
 
+-- |Get the underlying DFA or NFA from a generic FSA.
 dfaOrNfa :: FSA state symbol -> Either (DFA state symbol) (NFA state symbol)
 dfaOrNfa (D m) = Left m
 dfaOrNfa (N m) = Right m
