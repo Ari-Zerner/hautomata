@@ -128,9 +128,20 @@ currentStatesAndStacks :: NPDA state stackSymbol symbol -> [(state, [stackSymbol
 currentStatesAndStacks = Set.toList . statesAndStacks
 
 -- |Get the transition table of a NPDA.
-npdaTransitions :: NPDA state stackSymbol symbol
+npdaTransitions :: (Ord state, Ord stackSymbol, Ord symbol)
+                => NPDA state stackSymbol symbol
                 -> [(state, [(stackSymbol, [(symbol, [(state, [stackSymbol])])])])]
-npdaTransitions = undefined
+npdaTransitions NPDA{..} = listify $ buildHierarchy $ Map.toList transitions
+  where buildHierarchy = foldr aux Map.empty
+          where aux ((q, g, s), res) m =
+                  flip (Map.insert q) m $
+                    case m Map.!? q of
+                      Nothing -> Map.singleton g $ Map.singleton s res
+                      Just mq -> flip (Map.insert g) mq $
+                        case mq Map.!? g of
+                          Nothing  -> Map.singleton s res
+                          Just mqg -> Map.insert s res mqg
+        listify m = Map.toList $ Map.toList <$> fmap Map.toList <$> fmap (fmap Set.toList) <$> m
 
 instance (Ord state, Ord stackSymbol, Ord symbol)
   => Steppable symbol (NPDA state stackSymbol symbol) where
