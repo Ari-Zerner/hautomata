@@ -61,6 +61,7 @@ dtm :: (Ord state, Ord symbol)
     => symbol -- ^the "blank" symbol
     -> [(state, [(symbol, Either Decision (state, symbol, TapeAction))])] -- ^for each state, the list of transitions from that state
     -> state -- ^the initial state
+    -> DTM state symbol
 dtm = undefined
 
 -- |Splice a list of symbols into the tape. The first symbol in the list will be
@@ -102,6 +103,7 @@ ntm :: (Ord state, Ord symbol)
     => symbol -- ^the "blank" symbol
     -> [(state, [(symbol, Either Decision [(state, symbol, TapeAction)])])] -- ^for each state, the list of transitions from that state
     -> state -- ^the initial state
+    -> NTM state symbol
 ntm = undefined
 
 -- |As `spliceIntoTape`, but applied to every computation branch.
