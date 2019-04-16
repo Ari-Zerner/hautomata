@@ -90,7 +90,7 @@ instance PartialDecider (DTM state symbol) where
   partialDecide = undefined
 
 instance (Ord state, Ord symbol) => Accepter symbol (DTM state symbol) where
-  accepts = undefined
+  accepts = accepts = accepts . liftNtm
 
 --- NTM
 
@@ -127,7 +127,7 @@ instance PartialDecider (NTM state symbol) where
   partialDecide = undefined
 
 instance (Ord state, Ord symbol) => Accepter symbol (NTM state symbol) where
-  accepts = undefined
+  accepts = accepts . liftNtm
 
 --- TM
 
@@ -148,10 +148,12 @@ dtmOrNtm (D m) = Left m
 dtmOrNtm (N m) = Right m
 
 instance (Ord state, Ord symbol) => Steppable () (TM state symbol) where
-  step = undefined
+  step s (D m) = D <$> step s m
+  step s (N m) = N <$> step s m
 
 instance PartialDecider (TM state symbol) where
-  partialDecide = undefined
+  partialDecide (D m) = partialDecide m
+  partialDecide (N m) = partialDecide m
 
 instance (Ord state, Ord symbol) => Accepter symbol (TM state symbol) where
   accepts = undefined
