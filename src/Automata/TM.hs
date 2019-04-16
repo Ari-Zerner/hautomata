@@ -29,6 +29,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 data TapeAction = MoveLeft | Stay | MoveRight
+  deriving (Eq, Ord, Read, Show, Bounded, Enum)
 
 -- |A Turing machine tape. Infinite in both directions.
 data Tape symbol = Tape

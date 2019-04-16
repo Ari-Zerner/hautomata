@@ -7,7 +7,7 @@ class Steppable input a | a -> input where
   step :: input -> a -> Maybe a
 
 data Decision = Reject | Accept
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Ord, Read, Show, Bounded, Enum)
 
 -- |Accept if input is True, Reject if input is False.
 acceptIff :: Bool -> Decision
