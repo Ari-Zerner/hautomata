@@ -90,7 +90,7 @@ instance PartialDecider (DTM state symbol) where
   partialDecide = undefined
 
 instance (Ord state, Ord symbol) => Accepter symbol (DTM state symbol) where
-  accepts = accepts = accepts . liftNtm
+  accepts = accepts . liftDtm
 
 --- NTM
 
