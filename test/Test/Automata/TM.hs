@@ -41,25 +41,24 @@ prop_d_stepDecide_decision :: Symbol -> State -> Decision -> Bool
 prop_d_stepDecide_decision blank q d = maybe False ((== Decided d) . partialDecide) (step () m)
   where m = dtm blank [(q, [(blank, Left d)])] q
 
-prop_d_noStep1 :: Symbol -> State -> Bool
-prop_d_noStep1 blank start = isNothing $ step () m
+prop_d_reject_1 :: Symbol -> State -> Bool
+prop_d_reject_1 blank start = Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
   where m = dtm blank [] start
 
-prop_d_noStep2 :: Symbol -> State -> Bool
-prop_d_noStep2 blank start = isNothing $ step () m
+prop_d_reject_2 :: Symbol -> State -> Bool
+prop_d_reject_2 blank start = Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
   where m = dtm blank [(start, [])] start
 
-prop_d_noStep3 :: Symbol -> Symbol -> State -> Property
-prop_d_noStep3 blank c start = c /= blank ==> isNothing $ step () m
+prop_d_reject_3 :: Symbol -> Symbol -> State -> Property
+prop_d_reject_3 blank c start = c /= blank ==> Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
   where m = dtm blank [(start, [(c, Left Accept)])] start
 
 prop_d_transitions :: Symbol
                    -> [(State, [(Symbol, Either Decision (State, Symbol, TapeAction))])]
                    -> State
                    -> Bool
-prop_d_transitions blank trans start = trans == dtmTransitions m'
-  where m      = dtm blank trans start
-        trans' = dtmTransitions m
+prop_d_transitions blank trans start = trans' == dtmTransitions m'
+  where trans' = dtmTransitions $ dtm blank trans start
         m'     = dtm blank trans' start
 
 prop_d_splice :: Symbol -> State -> [Symbol] -> Int -> Bool
@@ -70,19 +69,20 @@ prop_d_splice blank start cs n = and [ currentSymbol tape == fromMaybe blank (li
   where tape = currentTape $ spliceIntoTape cs $ dtm blank [] start
         blanks = replicate n blank
 
-prop_d_move :: Symbol -> Symbol -> Symbol -> Symbol -> Maybe Bool
-prop_d_move blank c1 c2 c3 = do
-  let trans = [ (0, [ (blank, Right (1, c1, MoveRight))])
-              , (1, [ (blank, Right (1, c1, Stay))
-                    , (c2   , Right (2, c2, MoveRight))])
-              , (2, [ (blank, Right (3, c3, MoveLeft))])]
-  m <- iterate (>>= step ()) (return (dtm blank trans 0)) !! 4
-  let tape = currentTape m
-  return $ and [ currentState m == Right 3
-               , currentSymbol tape == c2
-               , isPrefixOf [c1] $ leftSymbols tape
-               , isPrefixOf [c2] $ rightSymbols tape
-               ]
+prop_d_move :: Symbol -> Symbol -> Symbol -> Symbol -> Property
+prop_d_move blank c1 c2 c3 = c1 /= blank ==>
+  and [ isNothing failure
+      , currentState m == Right 3
+      , currentSymbol tape == c2
+      , isPrefixOf [c1] $ leftSymbols tape
+      , isPrefixOf [c3] $ rightSymbols tape
+      ]
+  where tape = currentTape m
+        (failure, m) = runSteppable (dtm blank trans 0) $ replicate 4 ()
+        trans = [ (0, [ (blank, Right (1, c1, MoveRight))])
+                , (1, [ (blank, Right (1, c1, Stay))
+                      , (c1   , Right (2, c2, MoveRight))])
+                , (2, [ (blank, Right (3, c3, MoveLeft))])]
 
 propDAccepts :: Gen [Symbol] -> ([Symbol] -> Bool) -> Symbol -> State
              -> [(State, [(Symbol, Either Decision (State, Symbol, TapeAction))])]
@@ -100,10 +100,10 @@ prop_d_accepts_even = propDAccepts (listOf $ return 'x') (even . length) '_' 0 t
   where trans = [ (0, [('_', Left Accept), ('x', Right (1, 'x', MoveRight))])
                 , (1, [('_', Left Reject), ('x', Right (0, 'x', MoveRight))])]
 
-prop_d_accepts_unary_multiplication = propDAccepts gen p '_' 0 trans
+prop_d_accepts_unary_multiplication = withMaxSuccess 50 $ propDAccepts gen p '_' 0 trans
   where gen = do a <- arbitrarySizedNatural
                  b <- arbitrarySizedNatural
-                 c <- oneof [return $ a * b, arbitrarySizedNatural]
+                 c <- oneof [return $ a * b, choose (0, 2 * a * b)]
                  return $ replicate a 'a' ++ replicate b 'b' ++ replicate c 'c'
         p s = let count c = length $ filter (== c) s
               in count 'a' * count 'b' == count 'c'
