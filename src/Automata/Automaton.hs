@@ -2,9 +2,17 @@
 
 module Automata.Automaton where
 
+import Data.Maybe
+
 class Steppable input a | a -> input where
   -- ^Take a step with the given input if possible.
   step :: input -> a -> Maybe a
+
+-- ^Step until inputs run out or the next step would fail.
+-- Return the input that would cause failure (if it exists) and the final state.
+runSteppable :: Steppable input a => a -> [input] -> (Maybe input, a)
+runSteppable s []     = (Nothing, s)
+runSteppable s (x:xs) = maybe (Just x, s) (flip runSteppable xs) $ step x s
 
 data Decision = Reject | Accept
   deriving (Eq, Ord, Read, Show, Bounded, Enum)

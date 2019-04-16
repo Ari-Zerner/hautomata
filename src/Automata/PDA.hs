@@ -21,6 +21,7 @@ module Automata.PDA (
 import Automata.Automaton
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
+import Data.Maybe
 import Data.Foldable (foldMap)
 import Control.Monad
 
@@ -203,4 +204,5 @@ instance (Ord state) => Decider (PDA state stackSymbol symbol) where
 
 instance (Ord state, Ord stackSymbol, Ord symbol)
   => Accepter symbol (PDA state stackSymbol symbol) where
-  accepts m input = maybe False (isAccept . decide) $ foldM (flip step) m input
+  accepts m input = let (failure, m') = runSteppable m input
+                    in isNothing failure && isAccept (decide m')

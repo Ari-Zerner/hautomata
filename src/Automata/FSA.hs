@@ -164,4 +164,5 @@ instance (Ord state) => Decider (FSA state symbol) where
   decide (N m) = decide m
 
 instance (Ord state, Ord symbol) => Accepter symbol (FSA state symbol) where
-  accepts m input = maybe False (isAccept . decide) $ foldM (flip step) m input
+  accepts m input = let (failure, m') = runSteppable m input
+                    in isNothing failure && isAccept (decide m')
