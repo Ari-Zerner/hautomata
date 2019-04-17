@@ -23,50 +23,50 @@ type DTM' = DTM State Symbol
 
 prop_d_initState :: Symbol -> State -> Bool
 prop_d_initState blank start = currentState m == Right start
-  where m = dtm blank [] start
+  where m = dtm blank start []
 
 prop_d_stepContinue_state :: Symbol -> State -> State -> Bool
 prop_d_stepContinue_state blank q1 q2 = maybe False ((== Right q2) . currentState) (step () m)
-  where m = dtm blank [(q1, [(blank, Right (q2, blank, Stay))])] q1
+  where m = dtm blank q1 [(q1, [(blank, Right (q2, blank, Stay))])]
 
 prop_d_stepContinue_decision :: Symbol -> State -> State -> Bool
 prop_d_stepContinue_decision blank q1 q2 = maybe False ((== Undecided) . partialDecide) (step () m)
-  where m = dtm blank [(q1, [(blank, Right (q2, blank, Stay))])] q1
+  where m = dtm blank q1 [(q1, [(blank, Right (q2, blank, Stay))])]
 
 prop_d_stepDecide_state :: Symbol -> State -> Decision -> Bool
 prop_d_stepDecide_state blank q d = maybe False ((== Left d) . currentState) (step () m)
-  where m = dtm blank [(q, [(blank, Left d)])] q
+  where m = dtm blank q [(q, [(blank, Left d)])]
 
 prop_d_stepDecide_decision :: Symbol -> State -> Decision -> Bool
 prop_d_stepDecide_decision blank q d = maybe False ((== Decided d) . partialDecide) (step () m)
-  where m = dtm blank [(q, [(blank, Left d)])] q
+  where m = dtm blank q [(q, [(blank, Left d)])]
 
 prop_d_reject_1 :: Symbol -> State -> Bool
 prop_d_reject_1 blank start = Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
-  where m = dtm blank [] start
+  where m = dtm blank start []
 
 prop_d_reject_2 :: Symbol -> State -> Bool
 prop_d_reject_2 blank start = Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
-  where m = dtm blank [(start, [])] start
+  where m = dtm blank start [(start, [])]
 
 prop_d_reject_3 :: Symbol -> Symbol -> State -> Property
 prop_d_reject_3 blank c start = c /= blank ==> Just Reject == (partialDecide <$> step () m >>= maybeFromPartial)
-  where m = dtm blank [(start, [(c, Left Accept)])] start
+  where m = dtm blank start [(start, [(c, Left Accept)])]
 
 prop_d_transitions :: Symbol
                    -> [(State, [(Symbol, Either Decision (State, Symbol, TapeAction))])]
                    -> State
                    -> Bool
 prop_d_transitions blank trans start = trans' == dtmTransitions m'
-  where trans' = dtmTransitions $ dtm blank trans start
-        m'     = dtm blank trans' start
+  where trans' = dtmTransitions $ dtm blank start trans
+        m'     = dtm blank start trans'
 
 prop_d_splice :: Symbol -> State -> [Symbol] -> Int -> Bool
 prop_d_splice blank start cs n = and [ currentSymbol tape == fromMaybe blank (listToMaybe cs)
                                      , isPrefixOf blanks $ leftSymbols tape
                                      , isPrefixOf (drop 1 cs ++ blanks) $ rightSymbols tape
                                      ]
-  where tape = currentTape $ spliceIntoTape cs $ dtm blank [] start
+  where tape = currentTape $ spliceIntoTape cs $ dtm blank start []
         blanks = replicate n blank
 
 prop_d_move :: Symbol -> Symbol -> Symbol -> Symbol -> Property
@@ -78,7 +78,7 @@ prop_d_move blank c1 c2 c3 = c1 /= blank ==>
       , isPrefixOf [c3] $ rightSymbols tape
       ]
   where tape = currentTape m
-        (failure, m) = runSteppable (dtm blank trans 0) $ replicate 4 ()
+        (failure, m) = runSteppable (dtm blank 0 trans) $ replicate 4 ()
         trans = [ (0, [ (blank, Right (1, c1, MoveRight))])
                 , (1, [ (blank, Right (1, c1, Stay))
                       , (c1   , Right (2, c2, MoveRight))])
@@ -88,7 +88,7 @@ propDAccepts :: Gen [Symbol] -> ([Symbol] -> Bool) -> Symbol -> State
              -> [(State, [(Symbol, Either Decision (State, Symbol, TapeAction))])]
              -> Property
 propDAccepts gen p blank start trans =
-  forAll gen $ \input -> p input == accepts (dtm blank trans start) input
+  forAll gen $ \input -> p input == accepts (dtm blank start trans) input
 
 prop_d_accepts_1 = propDAccepts (return "") (const False) '_' 0 []
 prop_d_accepts_2 = propDAccepts (return "") (const False) '_' 0 [(0, [('_', Left Reject)])]

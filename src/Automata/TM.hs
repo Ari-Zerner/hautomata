@@ -86,10 +86,10 @@ data DTM state symbol = DTM
 -- |Create a new DTM.
 dtm :: (Ord state, Ord symbol)
     => symbol -- ^the "blank" symbol
-    -> [(state, [(symbol, Either Decision (state, symbol, TapeAction))])] -- ^for each state, the list of transitions from that state
     -> state -- ^the initial state
+    -> [(state, [(symbol, Either Decision (state, symbol, TapeAction))])] -- ^for each state, the list of transitions from that state
     -> DTM state symbol
-dtm blank transitions start = DTM transitionMap (Right start) (blankTape blank)
+dtm blank start transitions = DTM transitionMap (Right start) (blankTape blank)
   where transitionMap = Map.fromList [ ((state, symbol), action)
                                      | (state, stateTransitions) <- transitions
                                      , (symbol, action) <- stateTransitions
@@ -137,13 +137,13 @@ instance (Ord state, Ord symbol) => Accepter symbol (DTM state symbol) where
 -- |A non-deterministic Turing machine.
 data NTM state symbol = NTM
   (Map.Map (state, symbol) (Either Decision (Set.Set (state, symbol, TapeAction)))) -- ^transitions
-  (Set.Set (Either Decision state, Tape symbol)) -- ^state/tape pairs
+  [(Either Decision state, Tape symbol)] -- ^state/tape pairs
 
 -- |Create a new NTM.
 ntm :: (Ord state, Ord symbol)
     => symbol -- ^the "blank" symbol
-    -> [(state, [(symbol, Either Decision [(state, symbol, TapeAction)])])] -- ^for each state, the list of transitions from that state
     -> state -- ^the initial state
+    -> [(state, [(symbol, Either Decision [(state, symbol, TapeAction)])])] -- ^for each state, the list of transitions from that state
     -> NTM state symbol
 ntm = undefined
 
