@@ -173,41 +173,44 @@ prop_n_reject_4 :: Symbol -> State -> Bool
 prop_n_reject_4 blank start = Just (Decided Reject) == (partialDecide <$> step () m)
   where m = ntm blank start [(start, [(blank, Right [])])]
 
-prop_n_stepBranchContinueContinue :: Symbol -> State -> State -> State -> State -> State -> Bool
-prop_n_stepBranchContinueContinue blank q1 q2 q3 q4 q5 =
+unique :: Ord a => [a] -> Bool
+unique xs = nub xs == xs
+
+prop_n_stepBranchContinueContinue :: Symbol -> State -> State -> State -> State -> State -> Property
+prop_n_stepBranchContinueContinue blank q1 q2 q3 q4 q5 = unique [q1, q2, q3, q4, q5] ==>
   maybe False (checkStatesAndDecision [Right q4, Right q5] Undecided) (step () m >>= step ())
   where m = ntm blank q1 [ (q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])
                          , (q2, [(blank, Right [(q4, blank, Stay)])])
                          , (q3, [(blank, Right [(q5, blank, Stay)])])]
 
-prop_n_stepBranchContinueAccept :: Symbol -> State -> State -> State -> State -> Bool
-prop_n_stepBranchContinueAccept blank q1 q2 q3 q4 =
+prop_n_stepBranchContinueAccept :: Symbol -> State -> State -> State -> State -> Property
+prop_n_stepBranchContinueAccept blank q1 q2 q3 q4 = unique [q1, q2, q3, q4] ==>
   maybe False (checkStatesAndDecision [Right q4, Left Accept] (Decided Accept)) (step () m >>= step ())
   where m = ntm blank q1 [ (q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])
                          , (q2, [(blank, Right [(q4, blank, Stay)])])
                          , (q3, [(blank, Left Accept)])]
 
-prop_n_stepBranchContinueReject :: Symbol -> State -> State -> State -> State -> Bool
-prop_n_stepBranchContinueReject blank q1 q2 q3 q4 =
+prop_n_stepBranchContinueReject :: Symbol -> State -> State -> State -> State -> Property
+prop_n_stepBranchContinueReject blank q1 q2 q3 q4 = unique [q1, q2, q3, q4] ==>
   maybe False (checkStatesAndDecision [Right q4, Left Reject] Undecided) (step () m >>= step ())
   where m = ntm blank q1 [ (q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])
                          , (q2, [(blank, Right [(q4, blank, Stay)])])]
 
-prop_n_stepBranchAcceptAccept :: Symbol -> State -> State -> State -> Bool
-prop_n_stepBranchAcceptAccept blank q1 q2 q3 =
+prop_n_stepBranchAcceptAccept :: Symbol -> State -> State -> State -> Property
+prop_n_stepBranchAcceptAccept blank q1 q2 q3 = unique [q1, q2, q3] ==>
   maybe False (checkStatesAndDecision [Left Accept, Left Accept] (Decided Accept)) (step () m >>= step ())
   where m = ntm blank q1 [ (q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])
                          , (q2, [(blank, Left Accept)])
                          , (q3, [(blank, Left Accept)])]
 
-prop_n_stepBranchAcceptReject :: Symbol -> State -> State -> State -> Bool
-prop_n_stepBranchAcceptReject blank q1 q2 q3 =
+prop_n_stepBranchAcceptReject :: Symbol -> State -> State -> State -> Property
+prop_n_stepBranchAcceptReject blank q1 q2 q3 = unique [q1, q2, q3] ==>
   maybe False (checkStatesAndDecision [Left Accept, Left Reject] (Decided Accept)) (step () m >>= step ())
   where m = ntm blank q1 [ (q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])
                          , (q2, [(blank, Left Accept)])]
 
-prop_n_stepBranchRejectReject :: Symbol -> State -> State -> State -> Bool
-prop_n_stepBranchRejectReject blank q1 q2 q3 =
+prop_n_stepBranchRejectReject :: Symbol -> State -> State -> State -> Property
+prop_n_stepBranchRejectReject blank q1 q2 q3 = unique [q1, q2, q3] ==>
   maybe False (checkStatesAndDecision [Left Reject, Left Reject] (Decided Reject)) (step () m >>= step ())
   where m = ntm blank q1 [(q1, [(blank, Right [(q2, blank, Stay), (q3, blank, Stay)])])]
 

@@ -26,8 +26,8 @@ module Automata.TM (
 import Automata.Automaton
 import qualified Data.InfList as Inf
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import Data.Maybe
+import Data.Either
 
 data TapeAction = MoveLeft | Stay | MoveRight
   deriving (Eq, Ord, Read, Show, Bounded, Enum)
@@ -136,7 +136,7 @@ instance (Ord state, Ord symbol) => Accepter symbol (DTM state symbol) where
 
 -- |A non-deterministic Turing machine.
 data NTM state symbol = NTM
-  (Map.Map (state, symbol) (Either Decision (Set.Set (state, symbol, TapeAction)))) -- ^transitions
+  (Map.Map (state, symbol) (Either Decision [(state, symbol, TapeAction)])) -- ^transitions
   [(Either Decision state, Tape symbol)] -- ^state/tape pairs
 
 -- |Create a new NTM.
@@ -145,26 +145,44 @@ ntm :: (Ord state, Ord symbol)
     -> state -- ^the initial state
     -> [(state, [(symbol, Either Decision [(state, symbol, TapeAction)])])] -- ^for each state, the list of transitions from that state
     -> NTM state symbol
-ntm = undefined
+ntm blank start transitions = NTM transitionMap [(Right start, blankTape blank)]
+  where transitionMap = Map.fromList [ ((state, symbol), action)
+                                     | (state, stateTransitions) <- transitions
+                                     , (symbol, action) <- stateTransitions
+                                     ]
 
 -- |As `spliceIntoTape`, but applied to every computation branch.
 spliceIntoTapes :: [symbol] -> NTM state symbol -> NTM state symbol
-spliceIntoTapes = undefined
+spliceIntoTapes ss (NTM trans statesAndTapes) = NTM trans $ fmap (splice ss) <$> statesAndTapes
 
 -- |Get the current state/tape of every computation branch of an NTM.
 currentStatesAndTapes :: NTM state symbol -> [(Either Decision state, Tape symbol)]
-currentStatesAndTapes = undefined
+currentStatesAndTapes (NTM _ statesAndTapes) = statesAndTapes
 
 -- |Get the transitions of a NTM.
-ntmTransitions :: NTM state symbol
+ntmTransitions :: (Ord state, Ord symbol)
+               => NTM state symbol
                -> [(state, [(symbol, Either Decision [(state, symbol, TapeAction)])])]
-ntmTransitions = undefined
+ntmTransitions (NTM trans _) = Map.toList $ Map.toList <$> Map.foldrWithKey aux Map.empty trans
+  where aux (q, s) action = Map.insertWith Map.union q (Map.singleton s action)
 
 instance (Ord state, Ord symbol) => Steppable () (NTM state symbol) where
-  step = undefined
+  step () m | partialDecide m /= Undecided = Nothing
+  step () (NTM trans statesAndTapes)       = Just $ NTM trans $ do
+    (decisionOrState, tape) <- statesAndTapes
+    case decisionOrState of
+      Left _ -> return (decisionOrState, tape)
+      Right state -> case fromMaybe (Left Reject) $ trans Map.!? (state, currentSymbol tape) of
+        Left d -> return (Left d, tape)
+        Right actions -> do
+          (state', current', tapeAction) <- actions
+          return (Right state', doTapeAction tapeAction $ writeSymbol current' tape)
 
 instance PartialDecider (NTM state symbol) where
-  partialDecide = undefined
+  partialDecide (NTM _ statesAndTapes) = case map fst statesAndTapes of
+    states | any (either isAccept $ const False) states -> Decided Accept
+    states | all (either isReject $ const False) states -> Decided Reject
+    _                                                   -> Undecided
 
 instance (Ord state, Ord symbol) => Accepter symbol (NTM state symbol) where
   accepts = accepts . liftNtm
