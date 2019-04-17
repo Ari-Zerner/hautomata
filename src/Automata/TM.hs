@@ -152,7 +152,7 @@ spliceIntoTapes :: [symbol] -> NTM state symbol -> NTM state symbol
 spliceIntoTapes = undefined
 
 -- |Get the current state/tape of every computation branch of an NTM.
-currentStatesAndTapes :: NTM state symbol -> [(state, Tape symbol)]
+currentStatesAndTapes :: NTM state symbol -> [(Either Decision state, Tape symbol)]
 currentStatesAndTapes = undefined
 
 -- |Get the transitions of a NTM.
